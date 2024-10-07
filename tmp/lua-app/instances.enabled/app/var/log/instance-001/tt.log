@@ -1,0 +1,46 @@
+Watchdog 2024/10/07 20:15:46 [INFO] Start
+Watchdog 2024/10/07 20:15:46 (INFO): using "/opt/tarantool/instances.enabled/app/config.yaml" cluster config for instance "instance-001"
+started
+2024-10-07 20:15:46.782 [48] main/104/interactive I> Tarantool 3.2.0-0-g6df312b1971 Linux-x86_64-RelWithDebInfo
+2024-10-07 20:15:46.782 [48] main/104/interactive I> log level 5 (INFO)
+2024-10-07 20:15:46.782 [48] main/104/interactive I> wal/engine cleanup is paused
+2024-10-07 20:15:46.782 [48] main/104/interactive I> mapping 268435456 bytes for memtx tuple arena...
+2024-10-07 20:15:46.782 [48] main/104/interactive I> Actual slab_alloc_factor calculated on the basis of desired slab_alloc_factor = 1.044274
+2024-10-07 20:15:46.782 [48] main/104/interactive I> mapping 134217728 bytes for vinyl tuple arena...
+2024-10-07 20:15:46.784 [48] main/104/interactive I> update replication_synchro_quorum = 1
+2024-10-07 20:15:46.784 [48] main/104/interactive I> instance uuid 6fdc7494-d4dd-4080-ba90-549a64a701ff
+2024-10-07 20:15:46.784 [48] main/104/interactive evio.c:364 E> tx_binary: failed to bind on 127.0.0.1:3301: bind, called on fd 21, aka 127.0.0.1:3301: Address already in use
+2024-10-07 20:15:46.784 [48] main/104/interactive evio.c:368 E> SocketError: tx_binary: failed to bind, called on fd -1: Address already in use
+2024-10-07 20:15:46.784 [48] main/104/interactive F> can't initialize storage: tx_binary: failed to bind, called on fd -1: Address already in use
+Watchdog 2024/10/07 20:15:46 (WARN): "exit status 1".
+Watchdog 2024/10/07 20:15:46 (INFO): the Instance has shutdown.
+Watchdog 2024/10/07 20:16:56 [INFO] Start
+Watchdog 2024/10/07 20:16:56 (INFO): using "/opt/tarantool/instances.enabled/app/config.yaml" cluster config for instance "instance-001"
+started
+2024-10-07 20:16:56.558 [146] main/104/interactive I> Tarantool 3.2.0-0-g6df312b1971 Linux-x86_64-RelWithDebInfo
+2024-10-07 20:16:56.558 [146] main/104/interactive I> log level 5 (INFO)
+2024-10-07 20:16:56.558 [146] main/104/interactive I> wal/engine cleanup is paused
+2024-10-07 20:16:56.558 [146] main/104/interactive I> mapping 268435456 bytes for memtx tuple arena...
+2024-10-07 20:16:56.558 [146] main/104/interactive I> Actual slab_alloc_factor calculated on the basis of desired slab_alloc_factor = 1.044274
+2024-10-07 20:16:56.559 [146] main/104/interactive I> mapping 134217728 bytes for vinyl tuple arena...
+2024-10-07 20:16:56.560 [146] main/104/interactive I> update replication_synchro_quorum = 1
+2024-10-07 20:16:56.560 [146] main/104/interactive I> instance uuid ffeaed47-1ddd-4d6a-be7a-de9d81722a4c
+2024-10-07 20:16:56.560 [146] main/104/interactive I> tx_binary: bound to 127.0.0.1:3302
+2024-10-07 20:16:56.560 [146] main/104/interactive I> initializing an empty data directory
+2024-10-07 20:16:56.571 [146] main/104/interactive I> assigned id 1 to replica ffeaed47-1ddd-4d6a-be7a-de9d81722a4c
+2024-10-07 20:16:56.571 [146] main/104/interactive I> assigned name instance-001 to replica ffeaed47-1ddd-4d6a-be7a-de9d81722a4c
+2024-10-07 20:16:56.572 [146] main/104/interactive I> update replication_synchro_quorum = 1
+2024-10-07 20:16:56.572 [146] main/104/interactive I> replicaset uuid d74677b7-b59f-4a08-a1e7-639548a22b19
+2024-10-07 20:16:56.572 [146] main/104/interactive I> replicaset name: replicaset-001
+2024-10-07 20:16:56.572 [146] snapshot/101/main I> saving snapshot `/opt/tarantool/instances.enabled/app/var/lib/instance-001/00000000000000000000.snap.inprogress'
+2024-10-07 20:16:56.576 [146] snapshot/101/main I> done
+2024-10-07 20:16:56.576 [146] main/104/interactive I> ready to accept requests
+2024-10-07 20:16:56.576 [146] main/106/gc I> wal/engine cleanup is resumed
+2024-10-07 20:16:56.576 [146] main/104/interactive/box.load_cfg I> set 'instance_name' configuration option to "instance-001"
+2024-10-07 20:16:56.576 [146] main/104/interactive/box.load_cfg I> set 'custom_proc_title' configuration option to "tarantool - instance-001"
+2024-10-07 20:16:56.576 [146] main/104/interactive/box.load_cfg I> set 'log_nonblock' configuration option to false
+2024-10-07 20:16:56.576 [146] main/104/interactive/box.load_cfg I> set 'replicaset_name' configuration option to "replicaset-001"
+2024-10-07 20:16:56.577 [146] main/104/interactive/box.load_cfg I> set 'listen' configuration option to [{"uri":"127.0.0.1:3302"}]
+2024-10-07 20:16:56.577 [146] main/104/interactive/box.load_cfg I> set 'metrics' configuration option to {"labels":{"alias":"instance-001"},"include":["all"],"exclude":[]}
+2024-10-07 20:16:56.577 [146] main/107/checkpoint_daemon I> scheduled next checkpoint for Mon Oct  7 21:29:18 2024
+2024-10-07 20:16:56.577 [146] main I> entering the event loop
