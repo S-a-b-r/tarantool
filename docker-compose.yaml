@@ -1,0 +1,9 @@
+services:
+  t_db:
+    container_name: tarantool_db
+    image: tarantool/tarantool:3
+    environment:
+      TT_INSTANCE_NAME: instance-001
+    volumes:
+      - ./tmp/db:/var/lib/tarantool
+      - ./tmp/lua-app:/opt/tarantool
