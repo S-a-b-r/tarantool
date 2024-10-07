@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tarantool/go-tarantool/v2"
+	"github.com/tarantool/go-tarantool/v2/pool"
 	"time"
 )
 
@@ -11,25 +12,31 @@ func main() {
 	// Connect to the database
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	dialer := tarantool.NetDialer{
-		Address: "127.0.0.1:3301",
-		User:    "guest",
+		Address:  "127.0.0.1:3302",
+		User:     "sampleuser",
+		Password: "123456",
 	}
 	opts := tarantool.Opts{
 		Timeout: time.Second,
 	}
-	conn, err := tarantool.Connect(ctx, dialer, opts)
+
+	instances := []pool.Instance{{"instance-001", dialer, opts}}
+
+	conn, err := pool.Connect(ctx, instances)
+
+	//conn, err := tarantool.Connect(ctx, dialer, opts)
 	if err != nil {
 		fmt.Println("Connection refused:", err)
 		return
 	}
 
 	// Select by primary key
-	data, err := conn.Do(
-		tarantool.NewSelectRequest("users").
-			Limit(10).
-			Iterator(tarantool.IterEq).
-			Key([]interface{}{uint(1)}),
+	data, err := conn.DoInstance(
+		tarantool.NewSelectRequest("bands").
+			Limit(1).
+			Key([]interface{}{uint(1)}), "instance-001",
 	).Get()
 
 	if err != nil {

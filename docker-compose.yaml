@@ -7,3 +7,6 @@ services:
     volumes:
       - ./tmp/db:/var/lib/tarantool
       - ./tmp/lua-app:/opt/tarantool
+    ports:
+      - "3302:3302"
+      - "3301:3301"
