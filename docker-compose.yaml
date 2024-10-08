@@ -1,12 +1,10 @@
 services:
   t_db:
-    container_name: tarantool_db
+    container_name: tarantool_db_2
     image: tarantool/tarantool:3
-    environment:
-      TT_INSTANCE_NAME: instance-001
     volumes:
       - ./tmp/db:/var/lib/tarantool
-      - ./tmp/lua-app:/opt/tarantool
+      - ./lua-app:/etc/tarantool/instances.enabled/app
     ports:
       - "3302:3302"
       - "3301:3301"
