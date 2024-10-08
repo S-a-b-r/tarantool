@@ -12,6 +12,7 @@ func main() {
 	// Connect to the database
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	dialer := tarantool.NetDialer{
 		Address:  "localhost:3302",
 		User:     "sampleuser",

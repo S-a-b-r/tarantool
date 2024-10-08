@@ -2,6 +2,7 @@ credentials:
   users:
     sampleuser:
       password: '123456'
+      roles: [super]
       privileges:
         - permissions: [ read, write ]
           spaces: [ bands ]
