@@ -1,22 +1,74 @@
 credentials:
   users:
-    sampleuser:
-      password: '123456'
-      roles: [super]
-      privileges:
-        - permissions: [ read, write ]
-          spaces: [ bands ]
-        - permissions: [ execute ]
-          functions: [ get_bands_older_than ]
+    replicator:
+      password: 'topsecret'
+      roles: [ replication ]
+    storage:
+      password: 'secret'
+      roles: [ sharding ]
+
+iproto:
+  advertise:
+    peer:
+      login: replicator
+    sharding:
+      login: storage
+
+sharding:
+  bucket_count: 1000
 
 groups:
-  group-001:
+  storages:
+    roles: [ roles.crud-storage ]
+    app:
+      module: storage
+    sharding:
+      roles: [ storage ]
+    replication:
+      failover: manual
     replicasets:
-      replicaset-001:
+      storage-a:
+        leader: storage-a-001
         instances:
-          instance-002:
+          storage-a-001:
+            iproto:
+              listen:
+                - uri: '127.0.0.1:3303'
+              advertise:
+                client: '127.0.0.1:3303'
+          storage-a-002:
+            iproto:
+              listen:
+                - uri: '127.0.0.1:3304'
+              advertise:
+                client: '127.0.0.1:3304'
+      storage-b:
+        leader: storage-b-001
+        instances:
+          storage-b-001:
+            iproto:
+              listen:
+                - uri: '127.0.0.1:3305'
+              advertise:
+                client: '127.0.0.1:3305'
+          storage-b-002:
+            iproto:
+              listen:
+                - uri: '127.0.0.1:3306'
+              advertise:
+                client: '127.0.0.1:3306'
+  routers:
+    roles: [ roles.crud-router ]
+    app:
+      module: router
+    sharding:
+      roles: [ router ]
+    replicasets:
+      router-a-b:
+        instances:
+          router-a-b-001:
             iproto:
               listen:
                 - uri: '0.0.0.0:3302'
-app:
-  file: 'myapp.lua'
+              advertise:
+                client: '127.0.0.1:3302'

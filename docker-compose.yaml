@@ -1,7 +1,8 @@
 services:
   t_db:
     container_name: tarantool_db_2
-    image: tarantool/tarantool:3
+    build:
+      dockerfile: Dockerfile
     volumes:
       - ./tmp/db:/var/lib/tarantool
       - ./lua-app:/etc/tarantool/instances.enabled/app
