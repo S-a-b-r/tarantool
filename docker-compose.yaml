@@ -7,5 +7,8 @@ services:
       - ./tmp/db:/var/lib/tarantool
       - ./lua-app:/etc/tarantool/instances.enabled/app
     ports:
+      - "3305:3305"
+      - "3304:3304"
+      - "3303:3303"
       - "3302:3302"
       - "3301:3301"

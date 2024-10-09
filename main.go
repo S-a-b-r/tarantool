@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/tarantool/go-tarantool/v2"
+	"github.com/tarantool/go-tarantool/v2/crud"
 )
 
 func main() {
@@ -15,8 +16,8 @@ func main() {
 
 	dialer := tarantool.NetDialer{
 		Address:  "localhost:3302",
-		User:     "sampleuser",
-		Password: "123456",
+		User:     "admin",
+		Password: "admin",
 	}
 	opts := tarantool.Opts{
 		Timeout: time.Second,
@@ -28,39 +29,18 @@ func main() {
 		return
 	}
 
-	// Select by primary key
-	data, err := conn.Do(
-		tarantool.NewSelectRequest("bands").
-			Limit(10).
-			Iterator(tarantool.IterEq).
-			Key([]interface{}{uint(1)}),
-	).Get()
-	if err != nil {
-		fmt.Println("Got an error:", err)
+	// req := crud.MakeSelectRequest("bands").
+	// 	Opts(crud.SelectOpts{
+	// 		First: crud.MakeOptInt(2),
+	// 	})
+
+	req := crud.MakeGetRequest("bands").Key(4) // getReq
+
+	ret := crud.Result{}
+	if err = conn.Do(req).GetTyped(&ret); err != nil {
+		fmt.Printf("Failed to execute request: %s", err)
+		return
 	}
-	fmt.Println("Tuple selected by the primary key value:", data)
 
-	// Insert data
-	// tuples := [][]interface{}{
-	// 	{1, "Roxette", 1986},
-	// 	{2, "Scorpions", 1965},
-	// 	{3, "Ace of Base", 1987},
-	// 	{4, "The Beatles", 1960},
-	// }
-	// var futures []*tarantool.Future
-	// for _, tuple := range tuples {
-	// 	request := tarantool.NewInsertRequest("bands").Tuple(tuple)
-	// 	futures = append(futures, conn.Do(request))
-	// }
-	//
-	// fmt.Println("Inserted tuples:")
-	// for _, future := range futures {
-	// 	result, err := future.Get()
-	// 	if err != nil {
-	// 		fmt.Println("Got an error:", err)
-	// 	} else {
-	// 		fmt.Println(result)
-	// 	}
-	// }
-
+	fmt.Println("Tuple selected by the primary key value:", ret.Rows)
 }
