@@ -13,4 +13,18 @@ box.watch('box.status', function()
     })
     box.space.bands:create_index('id', { parts = { 'id' }, if_not_exists = true })
     box.space.bands:create_index('bucket_id', { parts = { 'bucket_id' }, unique = false, if_not_exists = true })
+
+    box.schema.create_space('unitInfo', {
+        format = {
+            { name = 'uid', type = 'string' },
+            { name = 'bucket_id', type = 'unsigned' },
+            { name = 'band_name', type = 'string' },
+            { name = 'year', type = 'unsigned' }
+        },
+        if_not_exists = true
+    })
+    box.space.bands:create_index('id', { parts = { 'id' }, if_not_exists = true })
+    box.space.bands:create_index('bucket_id', {
+        parts = { 'bucket_id' }, unique = false, if_not_exists = true
+    })
 end)
