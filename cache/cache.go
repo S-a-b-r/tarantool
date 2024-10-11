@@ -8,11 +8,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/tarantool/go-tarantool/v2"
 	"github.com/tarantool/go-tarantool/v2/crud"
+	"github.com/tarantool/go-tarantool/v2/queue"
 )
 
 type Cache interface {
 	Close()
-	Subscriber(poolSize int, channel Channel, handler func(ch, p, m string))
+	Subscriber(poolSize int, channel Channel, handler func(m string))
 	Publisher(channel Channel) chan<- string
 }
 
@@ -54,7 +55,33 @@ func Init(ctx context.Context, logger *zerolog.Logger, url string) Cache {
 	return &Session{}
 }
 
-func (s *Session) Subscriber(poolSize int, channel Channel, handler func(ch, p, m string)) {}
+
+// handler (ch, p, m), m - маска кеша, например(cmd, unitInfo и тд)
+func (s *Session) Subscriber(poolSize int, channel Channel, handler func(m string)) {
+	l := s.l.With().Str("channel", string(channel)).Logger()
+
+	stm, err := s.conn.NewStream()
+	stm.Conn.Do(tarantool.NewPingRequest())
+	q := queue.New(s.conn, string(channel))
+	ch := make(chan *queue.Task)
+
+	go s.subscriber(l, poolSize, ch, handler, queue)
+
+
+	callback := func(event tarantool.WatchEvent) {
+		fmt.Printf("event connection: %s\n", event.Conn.Addr())
+		fmt.Printf("event key: %s\n", event.Key)
+		fmt.Printf("event value: %v\n", event.Value)
+	}
+
+	watcher, err := s.conn.NewWatcher(string(channel), tarantool.WatchCallback(event tarantool.WatchEvent{}))
+	if err != nil {
+		fmt.Printf("Failed to connect watcher: %s\n", err)
+		return
+	}
+	defer watcher.Unregister()
+
+}
 
 func (s *Session) Publisher(channel Channel) chan<- string {
 	l := s.l.With().Interface("channel", channel).Logger()
@@ -66,22 +93,33 @@ func (s *Session) Publisher(channel Channel) chan<- string {
 	return pubCh
 }
 
-func (s *Session) subscriber(l *log.Logger, poolSize int, ch <-chan *tarantool.Message, h func(ch string, p string, m string)) {
+func (s *Session) subscriber(l *zerolog.Logger, poolSize int, ch chan *queue.Task, h func(m string), q queue.Queue) {
 	l.Println("start new subscriber")
 	defer l.Println("subscriber done")
 
-	s.handle = h
+	pool := make(chan struct{}, poolSize)
+
+	go func() {
+		for {
+			msg, err := q.Take()
+			if err != nil {
+				l.Fatal().Err(err).Msg("error taking message from queue")
+				return
+			}
+			ch <- msg
+		}
+	}()
 
 	for {
 		select {
 		case m, ok := <-ch:
 			if !ok {
-				l.Fatal("empty message received")
+				l.Fatal().Msg("empty message received")
 			}
 
-			s.pool <- struct{}{}
+			pool <- struct{}{}
 
-			go s.handleMessage(s.pool, m)
+			go s.handle(m.Data())
 
 		case <-s.ctx.Done():
 			return
@@ -89,34 +127,7 @@ func (s *Session) subscriber(l *log.Logger, poolSize int, ch <-chan *tarantool.M
 	}
 }
 
-func (s *Session) handleMessage(pool chan struct{}, m *tarantool.Message) {
-	defer func() {
-		<-pool
-	}()
-
-	fiber, err := fiber.New(m.Payload())
-	if err != nil {
-		log.Printf("error creating fiber: %v", err)
-		return
-	}
-
-	s.handle(fiber.Channel(), fiber.Peer(), fiber.Message())
-}
-
-func example(conn tarantool.Connector) {
-
-	// req := crud.MakeSelectRequest("bands").
-	// 	Opts(crud.SelectOpts{
-	// 		First: crud.MakeOptInt(2),
-	// 	})
-
-	req := crud.MakeGetRequest("bands").Key(4) // getReq
-
-	ret := crud.Result{}
-	if err := conn.Do(req).GetTyped(&ret); err != nil {
-		fmt.Printf("Failed to execute request: %s", err)
-		return
-	}
-
-	fmt.Println("Tuple selected by the primary key value:", ret.Rows)
+func (s *Session) handle(pool chan struct{}, prefixHash string, h func(m string)) {
+	h(prefixHash)
+	<-pool
 }
