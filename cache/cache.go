@@ -7,7 +7,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/tarantool/go-tarantool/v2"
-	"github.com/tarantool/go-tarantool/v2/crud"
 	"github.com/tarantool/go-tarantool/v2/queue"
 )
 
@@ -23,74 +22,58 @@ type Session struct {
 	l    *zerolog.Logger
 }
 
-func (s *Session) HGet(ctx context.Context, hash, field string) {
-	// get by hash
-	// hash = unitInfo:hash
-}
-
-func (s *Session) Close() {
-	if s == nil || s.conn == nil {
-		return
-	}
-
-	if err := s.conn.Close(); err != nil {
-		s.l.Error().Err(err).Msg("failed to close connection")
-	}
-}
-
 func Init(ctx context.Context, logger *zerolog.Logger, url string) Cache {
 	l := logger.With().Str("address", url).Logger()
 
-	dealer := GetDealer(url)
+	dialer := GetDialer(url)
 	opts := tarantool.Opts{
 		Timeout: time.Second,
 	}
 
 	conn, err := tarantool.Connect(ctx, dialer, opts)
 	if err != nil {
-		fmt.Println("Connection refused:", err)
+		l.Error().Err(err).Msg("Connection refused")
 		return nil
 	}
 
-	return &Session{}
+	data, err := conn.Do(tarantool.NewPingRequest()).Get()
+	if err != nil {
+		l.Error().Err(err).Msg("ping error")
+		return nil
+	}
+	fmt.Println(data)
+
+	return &Session{
+		conn: conn,
+		ctx:  ctx,
+		l:    &l,
+	}
 }
 
-
-// handler (ch, p, m), m - маска кеша, например(cmd, unitInfo и тд)
+// Subscriber handler (m), m - префиксы Хеша, например(cmd, unitInfo и тд)
 func (s *Session) Subscriber(poolSize int, channel Channel, handler func(m string)) {
 	l := s.l.With().Str("channel", string(channel)).Logger()
 
-	stm, err := s.conn.NewStream()
-	stm.Conn.Do(tarantool.NewPingRequest())
+	// stm, err := s.conn.NewStream()
+	// stm.Conn.Do(tarantool.NewPingRequest())
+
 	q := queue.New(s.conn, string(channel))
 	ch := make(chan *queue.Task)
 
-	go s.subscriber(l, poolSize, ch, handler, queue)
+	go s.subscriber(&l, poolSize, ch, handler, q)
 
+	// callback := func(event tarantool.WatchEvent) {
+	// 	fmt.Printf("event connection: %s\n", event.Conn.Addr())
+	// 	fmt.Printf("event key: %s\n", event.Key)
+	// 	fmt.Printf("event value: %v\n", event.Value)
+	// }
 
-	callback := func(event tarantool.WatchEvent) {
-		fmt.Printf("event connection: %s\n", event.Conn.Addr())
-		fmt.Printf("event key: %s\n", event.Key)
-		fmt.Printf("event value: %v\n", event.Value)
-	}
-
-	watcher, err := s.conn.NewWatcher(string(channel), tarantool.WatchCallback(event tarantool.WatchEvent{}))
-	if err != nil {
-		fmt.Printf("Failed to connect watcher: %s\n", err)
-		return
-	}
-	defer watcher.Unregister()
-
-}
-
-func (s *Session) Publisher(channel Channel) chan<- string {
-	l := s.l.With().Interface("channel", channel).Logger()
-
-	pubCh := make(chan string, 1)
-
-	go s.publisher(&l, channel, pubCh)
-
-	return pubCh
+	// watcher, err := s.conn.NewWatcher(string(channel), callback)
+	// if err != nil {
+	// 	fmt.Printf("Failed to connect watcher: %s\n", err)
+	// 	return
+	// }
+	// defer watcher.Unregister()
 }
 
 func (s *Session) subscriber(l *zerolog.Logger, poolSize int, ch chan *queue.Task, h func(m string), q queue.Queue) {
@@ -119,7 +102,10 @@ func (s *Session) subscriber(l *zerolog.Logger, poolSize int, ch chan *queue.Tas
 
 			pool <- struct{}{}
 
-			go s.handle(m.Data())
+			switch mm := m.Data().(type) {
+			case string:
+				go s.handle(pool, mm, h)
+			}
 
 		case <-s.ctx.Done():
 			return
@@ -130,4 +116,29 @@ func (s *Session) subscriber(l *zerolog.Logger, poolSize int, ch chan *queue.Tas
 func (s *Session) handle(pool chan struct{}, prefixHash string, h func(m string)) {
 	h(prefixHash)
 	<-pool
+}
+
+func (s *Session) Publisher(channel Channel) chan<- string {
+	// l := s.l.With().Interface("channel", channel).Logger()
+
+	pubCh := make(chan string, 1)
+
+	// go s.publisher(&l, channel, pubCh)
+
+	return pubCh
+}
+
+func (s *Session) HGet(ctx context.Context, hash, field string) {
+	// get by hash
+	// hash = unitInfo:hash
+}
+
+func (s *Session) Close() {
+	if s == nil || s.conn == nil {
+		return
+	}
+
+	if err := s.conn.Close(); err != nil {
+		s.l.Error().Err(err).Msg("failed to close connection")
+	}
 }

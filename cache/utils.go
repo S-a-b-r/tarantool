@@ -6,7 +6,7 @@ import (
 	"github.com/tarantool/go-tarantool/v2"
 )
 
-func GetDealer(url string) tarantool.NetDialer {
+func GetDialer(url string) tarantool.NetDialer {
 	url = strings.Replace(url, "tarantool://", "", -1)
 	urlData := strings.Split(url, "@")
 
