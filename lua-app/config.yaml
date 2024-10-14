@@ -37,12 +37,14 @@ groups:
             iproto:
               listen:
                 - uri: '127.0.0.1:3303'
+                - uri: '0.0.0.0:3313'
               advertise:
                 client: '127.0.0.1:3303'
           storage-a-002:
             iproto:
               listen:
                 - uri: '127.0.0.1:3304'
+                - uri: '0.0.0.0:3314'
               advertise:
                 client: '127.0.0.1:3304'
       storage-b:
@@ -52,12 +54,14 @@ groups:
             iproto:
               listen:
                 - uri: '127.0.0.1:3305'
+                - uri: '0.0.0.0:3315'
               advertise:
                 client: '127.0.0.1:3305'
           storage-b-002:
             iproto:
               listen:
                 - uri: '127.0.0.1:3306'
+                - uri: '0.0.0.0:3316'
               advertise:
                 client: '127.0.0.1:3306'
   routers:

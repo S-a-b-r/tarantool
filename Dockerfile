@@ -3,4 +3,4 @@ LABEL authors="shamshurin_gd"
 
 RUN apt-get update && apt-get install -y \
   zip unzip \
-  git cmake
+  git cmake iproute2

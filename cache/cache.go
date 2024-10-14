@@ -54,13 +54,11 @@ func Init(ctx context.Context, logger *zerolog.Logger, url string) Cache {
 func (s *Session) Subscriber(poolSize int, channel Channel, handler func(m string)) {
 	l := s.l.With().Str("channel", string(channel)).Logger()
 
-	// stm, err := s.conn.NewStream()
-	// stm.Conn.Do(tarantool.NewPingRequest())
-
-	q := queue.New(s.conn, string(channel))
-	ch := make(chan *queue.Task)
-
-	go s.subscriber(&l, poolSize, ch, handler, q)
+	stm, err := s.conn.NewStream()
+	if err != nil {
+		l.Error().Err(err).Msg("")
+	}
+	stm.Conn.Do(tarantool.NewPingRequest())
 
 	// callback := func(event tarantool.WatchEvent) {
 	// 	fmt.Printf("event connection: %s\n", event.Conn.Addr())
