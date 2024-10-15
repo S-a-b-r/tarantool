@@ -4,7 +4,7 @@ services:
     build:
       dockerfile: Dockerfile
     volumes:
-      - ./tmp/db:/var/lib/tarantool
+      - ./tmp/db:/var/lib/tarantool/sys_env/app
       - ./lua-app:/etc/tarantool/instances.enabled/app
     ports:
       - "3307:3316"
