@@ -1,12 +1,16 @@
 package cache
 
 import (
+	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/tarantool/go-tarantool/v2"
+	"github.com/tarantool/go-tarantool/v2/crud"
 )
 
-func GetDialer(url string) tarantool.NetDialer {
+func getDialer(url string) tarantool.NetDialer {
 	url = strings.Replace(url, "tarantool://", "", -1)
 	urlData := strings.Split(url, "@")
 
@@ -37,4 +41,81 @@ func getUserPassword(url string) (user string, password string) {
 		password = userData[1]
 	}
 	return user, password
+}
+
+func getFieldOnHashMap(ret crud.Result, field string) (string, error) {
+	rows, ok := ret.Rows.([]interface{})
+	if !ok || len(rows) == 0 {
+		return "", errors.New("invalid rows data")
+	}
+
+	row, ok := rows[0].([]interface{})
+	if !ok || len(row) < 2 {
+		return "", errors.New("invalid row data")
+	}
+
+	data, ok := row[1].(map[interface{}]interface{})
+	if !ok {
+		return "", errors.New("invalid data type")
+	}
+	for key, val := range data {
+		kStr, ok := key.(string)
+		if !ok {
+			continue
+		}
+		if kStr == field {
+			return getStringVal(val), nil
+		}
+	}
+
+	return "", errors.New("not found field")
+}
+
+func getValue(ret crud.Result) (string, error) {
+	rows, ok := ret.Rows.([]interface{})
+	if !ok || len(rows) == 0 {
+		return "", errors.New("invalid rows data")
+	}
+
+	row, ok := rows[0].([]interface{})
+	if !ok || len(row) < 2 {
+		return "", errors.New("invalid row data")
+	}
+
+	switch d := row[1].(type) {
+	case map[interface{}]interface{}:
+		return fmt.Sprintf("%+v", d), nil
+	case string:
+		return d, nil
+	case int:
+		return strconv.Itoa(d), nil
+	}
+
+	return "", errors.New("undefined type")
+}
+
+func getStringVal(val interface{}) string {
+	switch vv := val.(type) {
+	case string:
+		return vv
+	case int:
+		return strconv.Itoa(vv)
+	case int8:
+		return strconv.Itoa(int(vv))
+	case int16:
+		return strconv.Itoa(int(vv))
+	case int32:
+		return strconv.Itoa(int(vv))
+	case int64:
+		return strconv.Itoa(int(vv))
+	case uint8:
+		return strconv.Itoa(int(vv))
+	case uint16:
+		return strconv.Itoa(int(vv))
+	case uint32:
+		return strconv.Itoa(int(vv))
+	case uint64:
+		return strconv.Itoa(int(vv))
+	}
+	return ""
 }

@@ -2,9 +2,7 @@ package cache
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -17,6 +15,11 @@ type Cache interface {
 	// Subscriber(poolSize int, channel Channel, handler func(m string))
 	// Publisher(channel Channel) chan<- string
 	HGet(ctx context.Context, hash, field string) *StringCmd
+	Get(ctx context.Context, hash string) *StringCmd
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *StatusCmd
+	Keys(ctx context.Context, pattern string) *StringSliceCmd
+	MGet(ctx context.Context, keys ...string) *SliceCmd
+	Del()
 }
 
 type Session struct {
@@ -28,7 +31,7 @@ type Session struct {
 func Init(ctx context.Context, logger *zerolog.Logger, url string) (Cache, error) {
 	l := logger.With().Str("address", url).Logger()
 
-	dialer := GetDialer(url)
+	dialer := getDialer(url)
 	opts := tarantool.Opts{
 		Timeout: time.Second,
 	}
@@ -39,12 +42,11 @@ func Init(ctx context.Context, logger *zerolog.Logger, url string) (Cache, error
 		return &Session{}, err
 	}
 
-	data, err := conn.Do(tarantool.NewPingRequest()).Get()
+	_, err = conn.Do(tarantool.NewPingRequest()).Get()
 	if err != nil {
 		l.Error().Err(err).Msg("ping error")
 		return &Session{}, err
 	}
-	fmt.Println(data)
 
 	return &Session{
 		conn: conn,
@@ -134,69 +136,54 @@ func (s *Session) HGet(ctx context.Context, hash, field string) *StringCmd {
 	ret := crud.Result{}
 
 	if err := s.conn.Do(req).GetTyped(&ret); err != nil {
-		fmt.Printf("Failed to execute request: %s", err)
-		return NewStringCmd("", err)
+		return NewStringCmd("", fmt.Errorf("failed to execute request: %w", err))
 	}
-	fmt.Println(ret.Rows)
-	fmt.Printf("%T", ret.Rows)
 
-	fmt.Println(ret.Metadata)
-
-	return NewStringCmd(getField(ret, field))
+	return NewStringCmd(getFieldOnHashMap(ret, field))
 }
 
-func getField(ret crud.Result, field string) (string, error) {
-	rows, ok := ret.Rows.([]interface{})
-	if !ok || len(rows) == 0 {
-		return "", errors.New("invalid rows data")
+func (s *Session) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *StatusCmd {
+	var object = crud.MapObject{
+		"hash":       key,
+		"hash_table": value,
 	}
 
-	row, ok := rows[0].([]interface{})
-	if !ok || len(row) < 2 {
-		return "", errors.New("invalid row data")
+	opts := crud.SimpleOperationObjectOpts{
+		Timeout: crud.MakeOptFloat64(expiration.Seconds()),
 	}
 
-	data, ok := row[1].(map[interface{}]interface{})
-	if !ok {
-		return "", errors.New("invalid data type")
-	}
-	for key, val := range data {
-		kStr, ok := key.(string)
-		if !ok {
-			continue
-		}
-		if kStr == field {
-			return getStringVal(val), nil
-		}
+	req := crud.MakeInsertObjectRequest("cache").Context(ctx).Object(object).Opts(opts)
+
+	res, err := s.conn.Do(req).Get()
+	if err != nil {
+		return NewStatusCmd("", fmt.Errorf("failed to execute request: %w", err))
 	}
 
-	return "", errors.New("not found field")
+	fmt.Println(res)
+	return NewStatusCmd("success", nil)
 }
 
-func getStringVal(val interface{}) string {
-	switch vv := val.(type) {
-	case string:
-		return vv
-	case int:
-		return strconv.Itoa(vv)
-	case int8:
-		return strconv.Itoa(int(vv))
-	case int16:
-		return strconv.Itoa(int(vv))
-	case int32:
-		return strconv.Itoa(int(vv))
-	case int64:
-		return strconv.Itoa(int(vv))
-	case uint8:
-		return strconv.Itoa(int(vv))
-	case uint16:
-		return strconv.Itoa(int(vv))
-	case uint32:
-		return strconv.Itoa(int(vv))
-	case uint64:
-		return strconv.Itoa(int(vv))
+func (s *Session) Get(ctx context.Context, hash string) *StringCmd {
+	req := crud.MakeGetRequest("cache").Context(ctx).Key(hash)
+	ret := crud.Result{}
+
+	if err := s.conn.Do(req).GetTyped(&ret); err != nil {
+		return NewStringCmd("", fmt.Errorf("failed to execute request: %w", err))
 	}
-	return ""
+
+	return NewStringCmd(getValue(ret))
+}
+
+func (s *Session) Keys(ctx context.Context, pattern string) *StringSliceCmd {
+	return NewStringSliceCmd([]string{""}, nil)
+}
+
+func (s *Session) MGet(ctx context.Context, keys ...string) *SliceCmd {
+	return NewSliceCmd([]interface{}{}, nil)
+}
+
+func (s *Session) Del() {
+
 }
 
 func (s *Session) Close() {
