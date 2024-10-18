@@ -131,3 +131,29 @@ func (cmd *StatusCmd) String() string {
 func (cmd *StatusCmd) Result() (string, error) {
 	return cmd.val, cmd.err
 }
+
+type IntCmd struct {
+	baseCmd
+
+	val int
+}
+
+var _ Cmder = (*IntCmd)(nil)
+
+func NewIntCmd(value int, err error, args ...interface{}) *IntCmd {
+	return &IntCmd{
+		baseCmd: baseCmd{
+			args: args,
+			err:  err,
+		},
+		val: value,
+	}
+}
+
+func (cmd *IntCmd) String() string {
+	return fmt.Sprintf("commandType:%T, val: %d, args: %+v", cmd, cmd.val, cmd.args)
+}
+
+func (cmd *IntCmd) Result() (int, error) {
+	return cmd.val, cmd.err
+}

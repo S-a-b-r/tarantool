@@ -59,13 +59,16 @@ func main() {
 	// data, err := cacheT.HGet(cl, "report:001", "ID").Result()
 	// data, err := cacheT.Get(cl, "report:001").Result()
 	// res, err := cacheT.Set(cl, "report:002", report, time.Hour*2).Result()
-	data, err := cacheT.Keys(cl, "report:.*").Result()
-	res, err := cacheT.MGet(cl, data...).Result()
+	// data, err := cacheT.Keys(cl, "report:.*").Result()
+	// res, err := cacheT.MGet(cl, data...).Result()
 
+	_, err = cacheT.Del(cl, "report:001", "report:002").Result()
 	if err != nil {
 		fmt.Println("err: ", err)
 	}
-	fmt.Println(res)
+	data, err := cacheT.Keys(cl, "report:.*").Result()
+
+	fmt.Println(data)
 
 	// cacheT.Subscriber(10, cache.PChKeyEventsHSet, func(str string) {
 	// 	fmt.Println(str)

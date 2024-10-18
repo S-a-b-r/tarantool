@@ -19,7 +19,7 @@ type Cache interface {
 	MGet(ctx context.Context, keys ...string) *SliceCmd
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *StatusCmd // работает
 	Keys(ctx context.Context, pattern string) *StringSliceCmd
-	Del()
+	Del(ctx context.Context, keys ...string) *IntCmd
 }
 
 type Session struct {
@@ -176,17 +176,6 @@ func (s *Session) Get(ctx context.Context, hash string) *StringCmd {
 	return NewStringCmd(getValue(ret))
 }
 
-func (s *Session) Keys(ctx context.Context, pattern string) *StringSliceCmd {
-	req := tarantool.NewCallRequest("get_all_hashes_by_pattern").Args([]interface{}{[]string{pattern}}).Context(ctx)
-
-	data, err := s.conn.Do(req).Get()
-	if err != nil {
-		return NewStringSliceCmd([]string{}, fmt.Errorf("failed to execute request: %w", err))
-	}
-
-	return NewStringSliceCmd(getStringSliceRes(data))
-}
-
 // MGet Лучше переписать на lua функции
 func (s *Session) MGet(ctx context.Context, keys ...string) *SliceCmd {
 	res := make([]interface{}, 0)
@@ -203,8 +192,30 @@ func (s *Session) MGet(ctx context.Context, keys ...string) *SliceCmd {
 	return NewSliceCmd(res, nil)
 }
 
-func (s *Session) Del() {
+func (s *Session) Keys(ctx context.Context, pattern string) *StringSliceCmd {
+	req := tarantool.NewCallRequest("get_all_hashes_by_pattern").Args([]interface{}{[]string{pattern}}).Context(ctx)
 
+	data, err := s.conn.Do(req).Get()
+	if err != nil {
+		return NewStringSliceCmd([]string{}, fmt.Errorf("failed to execute request: %w", err))
+	}
+
+	return NewStringSliceCmd(getStringSliceRes(data))
+}
+
+func (s *Session) Del(ctx context.Context, keys ...string) *IntCmd {
+	countDeleted := 0
+
+	for _, key := range keys {
+		req := crud.MakeDeleteRequest("cache").Context(ctx).Key(key)
+
+		if _, err := s.conn.Do(req).Get(); err != nil {
+			return NewIntCmd(countDeleted, fmt.Errorf("failed to execute request: %w", err))
+		}
+		countDeleted++
+	}
+
+	return NewIntCmd(countDeleted, nil)
 }
 
 func (s *Session) Close() {
