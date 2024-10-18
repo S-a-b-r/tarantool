@@ -119,3 +119,27 @@ func getStringVal(val interface{}) string {
 	}
 	return ""
 }
+
+func getStringSliceRes(data interface{}) ([]string, error) {
+	res := make([]string, 0)
+
+	dSlice, ok := data.([]interface{})
+	if !ok {
+		return nil, errors.New("data is not array")
+	}
+
+	ddSlice, ok := dSlice[0].([]interface{})
+	if !ok {
+		return nil, errors.New("data is not array")
+	}
+
+	for _, val := range ddSlice {
+		valStr, ok := val.(string)
+		if !ok {
+			return []string{}, errors.New("can't set string value")
+		}
+		res = append(res, valStr)
+	}
+
+	return res, nil
+}

@@ -177,15 +177,14 @@ func (s *Session) Get(ctx context.Context, hash string) *StringCmd {
 }
 
 func (s *Session) Keys(ctx context.Context, pattern string) *StringSliceCmd {
-	req := tarantool.NewCallRequest("get_").Context(ctx).Args("test")
-	ret := crud.Result{}
+	req := tarantool.NewCallRequest("get_all_hashes_by_pattern").Args([]interface{}{[]string{pattern}}).Context(ctx)
 
-	if err := s.conn.Do(req).GetTyped(&ret); err != nil {
+	data, err := s.conn.Do(req).Get()
+	if err != nil {
 		return NewStringSliceCmd([]string{}, fmt.Errorf("failed to execute request: %w", err))
 	}
 
-	fmt.Println(ret.Rows)
-	return NewStringSliceCmd([]string{""}, nil)
+	return NewStringSliceCmd(getStringSliceRes(data))
 }
 
 func (s *Session) MGet(ctx context.Context, keys ...string) *SliceCmd {
