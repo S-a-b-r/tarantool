@@ -14,11 +14,11 @@ type Cache interface {
 	Close()
 	// Subscriber(poolSize int, channel Channel, handler func(m string))
 	// Publisher(channel Channel) chan<- string
-	HGet(ctx context.Context, hash, field string) *StringCmd
-	Get(ctx context.Context, hash string) *StringCmd
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *StatusCmd
-	Keys(ctx context.Context, pattern string) *StringSliceCmd
+	HGet(ctx context.Context, hash, field string) *StringCmd // работает
+	Get(ctx context.Context, hash string) *StringCmd         // работает
 	MGet(ctx context.Context, keys ...string) *SliceCmd
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *StatusCmd // работает
+	Keys(ctx context.Context, pattern string) *StringSliceCmd
 	Del()
 }
 
@@ -132,7 +132,9 @@ func Init(ctx context.Context, logger *zerolog.Logger, url string) (Cache, error
 // }
 
 func (s *Session) HGet(ctx context.Context, hash, field string) *StringCmd {
-	req := crud.MakeGetRequest("cache").Context(ctx).Key(hash)
+	req := crud.MakeGetRequest("cache").Context(ctx).Key(hash).Opts(crud.GetOpts{
+		Fields: crud.MakeOptTuple([]interface{}{"hash_table"}),
+	})
 	ret := crud.Result{}
 
 	if err := s.conn.Do(req).GetTyped(&ret); err != nil {
@@ -175,6 +177,14 @@ func (s *Session) Get(ctx context.Context, hash string) *StringCmd {
 }
 
 func (s *Session) Keys(ctx context.Context, pattern string) *StringSliceCmd {
+	req := tarantool.NewCallRequest("get_").Context(ctx).Args("test")
+	ret := crud.Result{}
+
+	if err := s.conn.Do(req).GetTyped(&ret); err != nil {
+		return NewStringSliceCmd([]string{}, fmt.Errorf("failed to execute request: %w", err))
+	}
+
+	fmt.Println(ret.Rows)
 	return NewStringSliceCmd([]string{""}, nil)
 }
 

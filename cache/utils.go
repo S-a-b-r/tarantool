@@ -50,11 +50,11 @@ func getFieldOnHashMap(ret crud.Result, field string) (string, error) {
 	}
 
 	row, ok := rows[0].([]interface{})
-	if !ok || len(row) < 2 {
+	if !ok || len(row) == 0 {
 		return "", errors.New("invalid row data")
 	}
 
-	data, ok := row[1].(map[interface{}]interface{})
+	data, ok := row[0].(map[interface{}]interface{})
 	if !ok {
 		return "", errors.New("invalid data type")
 	}

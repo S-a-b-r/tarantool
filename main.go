@@ -56,9 +56,9 @@ func main() {
 	// 	"TemplateName": "testTmp",
 	// }
 
-	// data, err := cacheT.HGet(cl, "report:001", "ID").Result()
+	data, err := cacheT.HGet(cl, "report:001", "ID").Result()
 	// data, err := cacheT.Get(cl, "report:001").Result()
-	data, err := cacheT.Set(cl, "report:001", report, time.Hour*2).Result()
+	// data, err := cacheT.Set(cl, "report:001", report, time.Hour*2).Result()
 
 	if err != nil {
 		fmt.Println("err: ", err)

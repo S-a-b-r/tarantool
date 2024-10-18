@@ -40,4 +40,22 @@ box.watch('box.status', function()
     box.space.cache:create_index('bucket_id', {
         parts = { 'bucket_id' }, unique = false, if_not_exists = true
     })
+
+    box.schema.func.create('get_hashes_by_pattern_storage', { language = 'lua' })
+    function get_hashes_by_pattern_storage(pattern)
+        local hashes = {}
+
+        local cache = box.space.cache
+        -- Loop through all UIDs
+        for _, tuple in cache:pairs() do
+            -- Check if the UID matches the pattern
+            if string.match(tuple[1], pattern) then
+                -- Add the UID to the list of matching UIDs
+                table.insert(hashes, tuple[1])
+            end
+        end
+        -- Return the list of matching UIDs
+        return hashes
+    end
+
 end)
