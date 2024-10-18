@@ -187,8 +187,20 @@ func (s *Session) Keys(ctx context.Context, pattern string) *StringSliceCmd {
 	return NewStringSliceCmd(getStringSliceRes(data))
 }
 
+// MGet Лучше переписать на lua функции
 func (s *Session) MGet(ctx context.Context, keys ...string) *SliceCmd {
-	return NewSliceCmd([]interface{}{}, nil)
+	res := make([]interface{}, 0)
+	for _, key := range keys {
+		val, err := s.Get(ctx, key).Result()
+		if err != nil {
+			s.l.Warn().Err(err).Str("key", key).Msg("failed get data with key")
+			continue
+		}
+
+		res = append(res, val)
+	}
+
+	return NewSliceCmd(res, nil)
 }
 
 func (s *Session) Del() {

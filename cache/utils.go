@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/tarantool/go-tarantool/v2"
 	"github.com/tarantool/go-tarantool/v2/crud"
@@ -74,7 +75,7 @@ func getFieldOnHashMap(ret crud.Result, field string) (string, error) {
 func getValue(ret crud.Result) (string, error) {
 	rows, ok := ret.Rows.([]interface{})
 	if !ok || len(rows) == 0 {
-		return "", errors.New("invalid rows data")
+		return "", errors.New("rows not found")
 	}
 
 	row, ok := rows[0].([]interface{})
@@ -121,6 +122,9 @@ func getStringVal(val interface{}) string {
 }
 
 func getStringSliceRes(data interface{}) ([]string, error) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
 	res := make([]string, 0)
 
 	dSlice, ok := data.([]interface{})
@@ -133,13 +137,22 @@ func getStringSliceRes(data interface{}) ([]string, error) {
 		return nil, errors.New("data is not array")
 	}
 
+	wg.Add(len(ddSlice))
+
 	for _, val := range ddSlice {
-		valStr, ok := val.(string)
-		if !ok {
-			return []string{}, errors.New("can't set string value")
-		}
-		res = append(res, valStr)
+		go func(val interface{}) {
+			defer wg.Done()
+
+			valStr := val.(string)
+
+			mu.Lock()
+			res = append(res, valStr)
+			mu.Unlock()
+
+		}(val)
 	}
+
+	wg.Wait()
 
 	return res, nil
 }

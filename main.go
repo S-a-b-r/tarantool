@@ -47,7 +47,7 @@ func main() {
 	cl, _ := context.WithTimeout(ctx, time.Second*1)
 
 	// report := map[string]string{
-	// 	"ID":           "testRep",
+	// 	"ID":           "testReport2",
 	// 	"Hash":         "hello",
 	// 	"AccountId":    "0001",
 	// 	"UserID":       "testUser",
@@ -58,13 +58,14 @@ func main() {
 
 	// data, err := cacheT.HGet(cl, "report:001", "ID").Result()
 	// data, err := cacheT.Get(cl, "report:001").Result()
-	// data, err := cacheT.Set(cl, "report:001", report, time.Hour*2).Result()
-	data, err := cacheT.Keys(cl, "unitInfo:.*").Result()
+	// res, err := cacheT.Set(cl, "report:002", report, time.Hour*2).Result()
+	data, err := cacheT.Keys(cl, "report:.*").Result()
+	res, err := cacheT.MGet(cl, data...).Result()
 
 	if err != nil {
 		fmt.Println("err: ", err)
 	}
-	fmt.Println(data)
+	fmt.Println(res)
 
 	// cacheT.Subscriber(10, cache.PChKeyEventsHSet, func(str string) {
 	// 	fmt.Println(str)
