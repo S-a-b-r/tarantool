@@ -6,45 +6,21 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"gitlab.globars.ru/shared/cache/v2"
 	"gitlab.globars.ru/shared/config"
 	"gitlab.globars.ru/shared/logger"
-
-	"tarantool/cache"
 )
 
-type storeReport struct {
-	ID           string    `json:"id"`
-	Hash         string    `json:"hash"`
-	AccountId    string    `json:"accountId"`
-	UserID       string    `json:"userId"`
-	Created      time.Time `json:"created"`
-	Requested    time.Time `json:"requested"`
-	TemplateName string    `json:"templateName"`
-	Status       string    `json:"status"`
-	Path         string    `json:"path"`
-	Error        string    `json:"error,omitempty"`
-	ObjectName   string    `json:"objectName,omitempty"`
-	Report       string    `json:"report"`
-	IsNoTrack    bool      `json:"isNoTrack"`
-	IsMobile     bool      `json:"isMobile"`
-}
-
 func main() {
-	config.Init()
-
-	// Connect to the database
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	log := logger.Init(viper.GetString(config.LogLevel), viper.GetString(config.LogFile), viper.GetInt(config.LogAge), viper.GetInt(config.LogBackups))
-	log.Info().Msg("starting...")
 
-	cacheT, err := cache.Init(ctx, log, viper.GetString(config.RedisURL))
-	if err != nil {
-		panic(err)
-	}
+	tdb := cache.InitTarantool(ctx, log, "tarantool://admin:admin@localhost:3302")
+	defer tdb.Close()
 
-	cl, _ := context.WithTimeout(ctx, time.Second*1)
+	cl, cancel := context.WithTimeout(ctx, 5*time.Second)
 
 	// report := map[string]string{
 	// 	"ID":           "testReport2",
@@ -55,24 +31,21 @@ func main() {
 	// 	"Requested":    time.Now().String(),
 	// 	"TemplateName": "testTmp",
 	// }
+	//
+	// res, err := tdb.Set(cl, "report:002", report, time.Hour*2).Result()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
-	// data, err := cacheT.HGet(cl, "report:001", "ID").Result()
-	// data, err := cacheT.Get(cl, "report:001").Result()
-	// res, err := cacheT.Set(cl, "report:002", report, time.Hour*2).Result()
-	// data, err := cacheT.Keys(cl, "report:.*").Result()
-	// res, err := cacheT.MGet(cl, data...).Result()
-
-	_, err = cacheT.Del(cl, "report:001", "report:002").Result()
+	data, err := tdb.Keys(cl, ".*").Result()
 	if err != nil {
-		fmt.Println("err: ", err)
+		fmt.Println(err)
 	}
-	data, err := cacheT.Keys(cl, "report:.*").Result()
+	res, err := tdb.MGet(cl, data...).Result()
+	if err != nil {
+		fmt.Println(err)
+	}
 
-	fmt.Println(data)
+	fmt.Println(res)
 
-	// cacheT.Subscriber(10, cache.PChKeyEventsHSet, func(str string) {
-	// 	fmt.Println(str)
-	// })
-
-	cacheT.Close()
 }
