@@ -3,29 +3,17 @@ box.watch('box.status', function()
         return
     end
 
-    box.schema.create_space('unitInfo', {
-        format = {
-            { name = 'uid', type = 'string' },
-            { name = 'bucket_id', type = 'unsigned' },
-            { name = 'band_name', type = 'string' },
-            { name = 'year', type = 'unsigned' }
-        },
-        if_not_exists = true
-    })
-    box.space.unitInfo:create_index('uid', { parts = { 'uid' }, if_not_exists = true })
-    box.space.unitInfo:create_index('bucket_id', {
-        parts = { 'bucket_id' }, unique = false, if_not_exists = true
-    })
-
     box.schema.create_space('cache', {
         format = {
             { name = 'hash', type = 'string' },
-            { name = 'hash_table', type = 'map' },
+            { name = 'hash_table', type = 'map', is_nullable = true },
+            { name = 'string_data', type = 'string', is_nullable = true },
+            { name = 'binary_data', type = 'varbinary', is_nullable = true },
             { name = 'bucket_id', type = 'unsigned' },
         },
         if_not_exists = true
     })
-    box.space.cache:create_index('hash', { parts = { 'hash' }, if_not_exists = true })
+    box.space.cache:create_index('hash', { parts = { 'hash' }, unique = true, if_not_exists = true })
     box.space.cache:create_index('bucket_id', {
         parts = { 'bucket_id' }, unique = false, if_not_exists = true
     })

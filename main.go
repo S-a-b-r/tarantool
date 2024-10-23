@@ -37,15 +37,26 @@ func main() {
 	// 	fmt.Println(err)
 	// }
 
-	data, err := tdb.Keys(cl, ".*").Result()
-	if err != nil {
-		fmt.Println(err)
-	}
-	res, err := tdb.MGet(cl, data...).Result()
+	// _, err := tdb.Set(cl, "report:just_test", []byte("test string"), 0).Result()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
+	res, err := tdb.Get(cl, "report:599fd54ade16934b10267925:67189c15aed54b4b80574842:head").Result()
+	//report:599fd54ade16934b10267925:67189d769da93e9828055edb:head
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println(res)
+
+	// data, err := tdb.Keys(cl, ".*").Result()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// res, err := tdb.MGet(cl, data...).Result()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
 }
