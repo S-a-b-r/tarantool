@@ -15,10 +15,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	log := logger.Init(viper.GetString(config.LogLevel), viper.GetString(config.LogFile), viper.GetInt(config.LogAge), viper.GetInt(config.LogBackups))
+	config.Init()
 
-	tdb := cache.InitTarantool(ctx, log, "tarantool://admin:admin@localhost:3302")
-	defer tdb.Close()
+	log := logger.Init(viper.GetString(config.LogLevel), viper.GetString(config.LogFile), 1000, 1000)
+
+	log.Info().Msg("starting")
+	cacheDB := cache.InitTarantool(ctx, log, "tarantool://admin:admin@localhost:3302")
+	defer cacheDB.Close()
 
 	cl, cancel := context.WithTimeout(ctx, 5*time.Second)
 
@@ -42,14 +45,6 @@ func main() {
 	// 	fmt.Println(err)
 	// }
 
-	res, err := tdb.Get(cl, "report:599fd54ade16934b10267925:67189c15aed54b4b80574842:head").Result()
-	//report:599fd54ade16934b10267925:67189d769da93e9828055edb:head
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(res)
-
 	// data, err := tdb.Keys(cl, ".*").Result()
 	// if err != nil {
 	// 	fmt.Println(err)
@@ -58,5 +53,20 @@ func main() {
 	// if err != nil {
 	// 	fmt.Println(err)
 	// }
+
+	key := fmt.Sprintf("cmd:%s:%s", "testUid", "testMsgId")
+	m := "testtesetetestsetstsetsetestestestsetsets"
+
+	if err := cacheDB.HSet(cl, key, "command", m).Err(); err != nil {
+		log.Error().Err(err).Msg("failed to save command to redis data base")
+		return
+	}
+
+	res, err := cacheDB.Get(cl, "cmd:testUid:testMsgId").Result()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(res)
 
 }

@@ -11,7 +11,7 @@ require (
 	gitlab.globars.ru/shared/logger v1.0.2
 )
 
-replace gitlab.globars.ru/shared/cache/v2 v2.0.0 => ../cache_v2
+replace gitlab.globars.ru/shared/cache/v2 v2.0.0 => ../cache
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect

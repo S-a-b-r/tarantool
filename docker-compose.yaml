@@ -14,3 +14,4 @@ services:
       - "3302:3302"
       - "3301:3301"
     network_mode: bridge
+    working_dir: /etc/tarantool/instances.enabled/app
