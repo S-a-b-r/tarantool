@@ -10,6 +10,7 @@ box.watch('box.status', function()
             { name = 'string_data', type = 'string', is_nullable = true },
             { name = 'binary_data', type = 'varbinary', is_nullable = true },
             { name = 'bucket_id', type = 'unsigned' },
+            { name = 'expired_at', type = 'datetime'}
         },
         if_not_exists = true
     })
@@ -20,6 +21,23 @@ box.watch('box.status', function()
 
     box.schema.func.create('get_hashes_by_pattern_storage', { language = 'lua', if_not_exists = true})
     function get_hashes_by_pattern_storage(pattern)
+        local hashes = {}
+
+        local cache = box.space.cache
+        -- Loop through all UIDs
+        for _, tuple in cache:pairs() do
+            -- Check if the UID matches the pattern
+            if string.match(tuple[1], pattern) then
+                -- Add the UID to the list of matching UIDs
+                table.insert(hashes, tuple[1])
+            end
+        end
+        -- Return the list of matching UIDs
+        return hashes
+    end
+
+    box.schema.func.create('drop_expires_data', { language = 'lua', if_not_exists = true})
+    function drop_expires_data()
         local hashes = {}
 
         local cache = box.space.cache
