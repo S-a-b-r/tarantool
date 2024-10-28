@@ -54,12 +54,16 @@ func main() {
 	// 	fmt.Println(err)
 	// }
 
-	key := fmt.Sprintf("cmd:%s:%s", "testUid", "testMsgId")
-	m := "testtesetetestsetstsetsetestestestsetsets"
-
-	if err := cacheDB.HSet(cl, key, "command", m).Err(); err != nil {
-		log.Error().Err(err).Msg("failed to save command to redis data base")
-		return
+	// key := fmt.Sprintf("cmd:%s:%s", "testUid", "testMsgId")
+	// m := "testtesetetestsetstsetsetestestestsetsets"
+	//
+	// if err := cacheDB.HSet(cl, key, "command", m).Err(); err != nil {
+	// 	log.Error().Err(err).Msg("failed to save command to redis data base")
+	// 	return
+	// }
+	err := cacheDB.Set(cl, "cmd:testUid:testMsgId", []byte("test command"), time.Hour*1).Err()
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	res, err := cacheDB.Get(cl, "cmd:testUid:testMsgId").Result()

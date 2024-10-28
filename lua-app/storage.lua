@@ -3,14 +3,14 @@ box.watch('box.status', function()
         return
     end
 
+    require('datetime')
+
     box.schema.create_space('cache', {
         format = {
             { name = 'hash', type = 'string' },
-            { name = 'hash_table', type = 'map', is_nullable = true },
-            { name = 'string_data', type = 'string', is_nullable = true },
-            { name = 'binary_data', type = 'varbinary', is_nullable = true },
+            { name = 'value', type = 'any', is_nullable = true },
             { name = 'bucket_id', type = 'unsigned' },
-            { name = 'expired_at', type = 'datetime'}
+            { name = 'expired_at', type = 'datetime', is_nullable = true}
         },
         if_not_exists = true
     })
@@ -36,21 +36,15 @@ box.watch('box.status', function()
         return hashes
     end
 
-    box.schema.func.create('drop_expires_data', { language = 'lua', if_not_exists = true})
-    function drop_expires_data()
-        local hashes = {}
-
+    box.schema.func.create('drop_expires', { language = 'lua', if_not_exists = true})
+    function drop_expires()
         local cache = box.space.cache
-        -- Loop through all UIDs
         for _, tuple in cache:pairs() do
-            -- Check if the UID matches the pattern
-            if string.match(tuple[1], pattern) then
-                -- Add the UID to the list of matching UIDs
-                table.insert(hashes, tuple[1])
+            if tuple.expired_at > box.time.now() then
+                tuple.delete()
             end
         end
-        -- Return the list of matching UIDs
-        return hashes
+        return 'ok'
     end
 
 end)
